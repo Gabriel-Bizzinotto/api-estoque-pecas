@@ -1,0 +1,14 @@
+# Senhas e configurações
+.env
+
+# Arquivos temporários do Python
+__pycache__/
+*.pyc
+
+# Pasta do ambiente virtual (se você tiver)
+venv/
+.venv/
+
+# Arquivos de log e sistema
+*.log
+.vscode/

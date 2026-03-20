@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cadastro + Caminhonete</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #007bff; --bg: #f1f2f6; --dark: #2f3542; --gray: #747d8c; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); padding: 15px; margin: 0; color: var(--dark); }
+        
+        .container { max-width: 500px; margin: 0 auto; background: white; padding: 25px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        h2 { margin: 0 0 20px 0; font-size: 22px; }
+
+        label { display: block; margin-top: 15px; font-size: 13px; font-weight: bold; color: var(--gray); }
+        /* Font-size 16px para evitar o zoom do iPhone */
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; outline: none; }
+        input:focus { border-color: var(--primary); }
+
+        /* Seletor de Estoque Moderno */
+        .seletor-estoque { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; border-radius: 15px; padding: 5px; margin-top: 8px; border: 1px solid #ddd; }
+        .btn-qtde { background: white; color: var(--primary); border: none; width: 50px; height: 50px; border-radius: 12px; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .btn-qtde:active { transform: scale(0.95); background: #e7f1ff; }
+        #input-estoque { border: none; background: transparent; text-align: center; font-size: 20px; font-weight: 800; width: 60px; margin: 0; }
+        #input-estoque::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+        .btn-salvar { width: 100%; background: var(--primary); color: white; border: none; padding: 18px; border-radius: 15px; font-weight: bold; font-size: 16px; margin-top: 25px; cursor: pointer; }
+        .btn-salvar:disabled { background: #ccc; }
+
+        /* Botão de Link Vazado Ajustado para Rota Flask */
+        .btn-estoque-link { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; padding: 15px; text-decoration: none; color: var(--primary); font-weight: 700; font-size: 15px; border: 2px solid var(--primary); border-radius: 15px; transition: all 0.2s; }
+        .btn-estoque-link:active { background: rgba(0, 123, 255, 0.1); transform: scale(0.98); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Nova Peça ➕</h2>
+    <form id="form-peca">
+        <label>Nome da Peça</label>
+        <input type="text" name="nome" placeholder="Ex: Bomba de Alta" required>
+
+        <label>Código / Part Number</label>
+        <input type="text" name="codigo_part_number" placeholder="Ex: BAP-9921" required>
+
+        <label>Categoria</label>
+        <select name="categoria">
+            <option value="Geral">Geral</option>
+            <option value="Motor">Motor</option>
+            <option value="Suspensão">Suspensão</option>
+            <option value="Freios">Freios</option>
+            <option value="Elétrica">Elétrica</option>
+            <option value="Acessórios">Acessórios</option>
+        </select>
+
+        <label>Montadora</label>
+        <input type="text" name="marca" placeholder="Ex: Toyota, Fiat">
+
+        <label>Veículo / Modelo</label>
+        <input type="text" name="veiculo" placeholder="Ex: Hilux 2.8">
+
+        <label>Ano do Veículo</label>
+        <input type="text" name="ano" placeholder="Ex: 2020/2021">
+
+        <label>Preço de Venda (R$)</label>
+        <input type="number" name="valor" step="0.01" placeholder="0.00" required>
+
+        <label>Quantidade em Estoque</label>
+        <div class="seletor-estoque">
+            <button type="button" class="btn-qtde" onclick="alterarQtde(-1)">−</button>
+            <input type="number" name="estoque" id="input-estoque" value="1" readonly>
+            <button type="button" class="btn-qtde" onclick="alterarQtde(1)">+</button>
+        </div>
+
+        <label>Foto da Peça</label>
+        <input type="file" name="foto" id="foto" accept="image/*">
+
+        <button type="submit" class="btn-salvar" id="btn-submit">Cadastrar Peça</button>
+        
+        <a href="/catalogo" class="btn-estoque-link">
+            <i class="fas fa-boxes"></i> Ver Estoque Atual
+        </a>
+    </form>
+</div>
+
+<script>
+    const IP = "192.168.1.73";
+
+    function alterarQtde(valor) {
+        const input = document.getElementById('input-estoque');
+        let novo = parseInt(input.value) + valor;
+        if (novo >= 0) input.value = novo;
+    }
+
+    document.getElementById('form-peca').onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = document.getElementById('btn-submit');
+        btn.innerText = "Cadastrando...";
+        btn.disabled = true;
+
+        const formData = new FormData(e.target);
+
+        try {
+            const res = await fetch(`http://${IP}:5000/api/pecas`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (res.ok) {
+                alert("✅ Peça salva com sucesso!");
+                // ROTA CORRIGIDA PARA /catalogo
+                window.location.href = "/catalogo";
+            } else {
+                alert("❌ Erro ao cadastrar. Verifique os dados.");
+                btn.innerText = "Cadastrar Peça";
+                btn.disabled = false;
+            }
+        } catch (err) {
+            alert("❌ Servidor offline!");
+            btn.innerText = "Cadastrar Peça";
+            btn.disabled = false;
+        }
+    };
+</script>
+
+</body>
+</html>
