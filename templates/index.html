@@ -13,11 +13,9 @@
         h2 { margin: 0 0 20px 0; font-size: 22px; }
 
         label { display: block; margin-top: 15px; font-size: 13px; font-weight: bold; color: var(--gray); }
-        /* Font-size 16px para evitar o zoom do iPhone */
         input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; outline: none; }
         input:focus { border-color: var(--primary); }
 
-        /* Seletor de Estoque Moderno */
         .seletor-estoque { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; border-radius: 15px; padding: 5px; margin-top: 8px; border: 1px solid #ddd; }
         .btn-qtde { background: white; color: var(--primary); border: none; width: 50px; height: 50px; border-radius: 12px; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .btn-qtde:active { transform: scale(0.95); background: #e7f1ff; }
@@ -27,7 +25,6 @@
         .btn-salvar { width: 100%; background: var(--primary); color: white; border: none; padding: 18px; border-radius: 15px; font-weight: bold; font-size: 16px; margin-top: 25px; cursor: pointer; }
         .btn-salvar:disabled { background: #ccc; }
 
-        /* Botão de Link Vazado Ajustado para Rota Flask */
         .btn-estoque-link { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; padding: 15px; text-decoration: none; color: var(--primary); font-weight: 700; font-size: 15px; border: 2px solid var(--primary); border-radius: 15px; transition: all 0.2s; }
         .btn-estoque-link:active { background: rgba(0, 123, 255, 0.1); transform: scale(0.98); }
     </style>
@@ -84,7 +81,8 @@
 </div>
 
 <script>
-    const IP = "192.168.1.73";
+    // A URL agora aponta para o seu servidor real no Render
+    const API_URL = "https://mais-caminhonete.onrender.com/api/pecas";
 
     function alterarQtde(valor) {
         const input = document.getElementById('input-estoque');
@@ -101,22 +99,24 @@
         const formData = new FormData(e.target);
 
         try {
-            const res = await fetch(`http://${IP}:5000/api/pecas`, {
+            // Usando a constante API_URL atualizada
+            const res = await fetch(API_URL, {
                 method: 'POST',
                 body: formData
             });
 
             if (res.ok) {
                 alert("✅ Peça salva com sucesso!");
-                // ROTA CORRIGIDA PARA /catalogo
                 window.location.href = "/catalogo";
             } else {
-                alert("❌ Erro ao cadastrar. Verifique os dados.");
+                const erroData = await res.json();
+                alert("❌ Erro ao cadastrar: " + (erroData.erro || "Verifique os dados."));
                 btn.innerText = "Cadastrar Peça";
                 btn.disabled = false;
             }
         } catch (err) {
-            alert("❌ Servidor offline!");
+            console.error(err);
+            alert("❌ Servidor offline ou erro de conexão!");
             btn.innerText = "Cadastrar Peça";
             btn.disabled = false;
         }
