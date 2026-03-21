@@ -118,7 +118,6 @@
 <script>
     let estoque = [];
     let filtroCat = 'Todas';
-    // URL Atualizada para o Render
     const API_URL = "https://mais-caminhonete.onrender.com/api/pecas";
 
     async function carregar() {
@@ -129,7 +128,7 @@
             renderizar();
         } catch (err) {
             console.error(err);
-            document.getElementById('lista-pecas').innerHTML = '<p style="text-align:center; color:red;">⚠️ Erro ao carregar estoque. Verifique sua conexão.</p>';
+            document.getElementById('lista-pecas').innerHTML = '<p style="text-align:center; color:red;">⚠️ Erro ao carregar estoque.</p>';
         }
     }
 
@@ -191,7 +190,7 @@
         document.getElementById('det-codigo').innerText = p.codigo_part_number;
         document.getElementById('det-valor').innerText = `R$ ${p.valor.toFixed(2).replace('.', ',')}`;
         
-        const textoZap = `Olá! Segue orçamento:\n\n*${p.nome}*\n🚗 Carro: ${p.marca} ${p.veiculo}\n📅 Ano: ${p.ano}\n🔢 Cód: ${p.codigo_part_number}\n💰 *Valor: R$ ${p.valor.toFixed(2).replace('.', ',')}*\n\nVeja a foto aqui: ${p.foto_url}`;
+        const textoZap = `Olá! Segue orçamento:\n\n*${p.nome}*\n🚗 Carro: ${p.marca} ${p.veiculo}\n📅 Ano: ${p.ano}\n🔢 Cód: ${p.codigo_part_number}\n💰 *Valor: R$ ${p.valor.toFixed(2).replace('.', ',')}*\n\nFoto: ${p.foto_url}`;
         document.getElementById('btn-whatsapp').href = `https://wa.me/?text=${encodeURIComponent(textoZap)}`;
         
         document.getElementById('modalDetalhes').style.display = 'block';
@@ -231,24 +230,33 @@
             });
             fecharEdit();
             carregar();
-        } catch (err) {
-            alert("Erro ao salvar alterações.");
-        }
+        } catch (err) { alert("Erro ao salvar."); }
     }
 
+    // FUNÇÃO OTIMISTA: Atualiza a tela instantaneamente
     async function mudarestock(id, n) {
         const p = estoque.find(x => x.id === id);
-        const novo = p.estoque + n;
-        if(novo < 0) return;
+        const valorAntigo = p.estoque;
+        const novoValor = p.estoque + n;
+        
+        if(novoValor < 0) return;
+
+        // Atualiza a tela na hora para o usuário não sentir lentidão
+        p.estoque = novoValor;
+        renderizar();
+
         try {
-            await fetch(`${API_URL}/${id}`, {
+            const res = await fetch(`${API_URL}/${id}`, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ estoque: novo })
+                body: JSON.stringify({ estoque: novoValor })
             });
-            carregar();
+            if(!res.ok) throw new Error();
         } catch (err) {
-            alert("Erro ao atualizar estoque.");
+            // Se der erro no servidor, volta o valor e avisa
+            p.estoque = valorAntigo;
+            renderizar();
+            alert("Erro ao sincronizar. Tente novamente.");
         }
     }
 
@@ -257,9 +265,7 @@
             try {
                 await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
                 carregar();
-            } catch (err) {
-                alert("Erro ao excluir peça.");
-            }
+            } catch (err) { alert("Erro ao excluir."); }
         }
     }
 
