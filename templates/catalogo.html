@@ -162,7 +162,7 @@
                     <button class="btn-icon" style="color:var(--danger)" onclick="excluir(${p.id})">🗑️</button>
                 </div>
                 <div class="corpo-card">
-                    <img src="${p.foto_url || 'https://via.placeholder.com/90'}" class="foto-peca">
+                    <img src="${p.foto_url ? p.foto_url.replace('.heic', '.jpg') : 'https://via.placeholder.com/90'}" class="foto-peca">
                     <div class="info-peca">
                         <span class="tag-veiculo">${p.marca} ${p.veiculo || ''}</span>
                         <span class="tag-ano">Ano: ${p.ano || 'N/I'}</span>
@@ -182,7 +182,7 @@
 
     function verDetalhes(id) {
         const p = estoque.find(x => x.id === id);
-        document.getElementById('det-foto').src = p.foto_url || 'https://via.placeholder.com/300';
+        document.getElementById('det-foto').src = p.foto_url ? p.foto_url.replace('.heic', '.jpg') : 'https://via.placeholder.com/300';
         document.getElementById('det-nome').innerText = p.nome;
         document.getElementById('det-marca').innerText = p.marca;
         document.getElementById('det-veiculo').innerText = p.veiculo || '---';
