@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Estoque - + Caminhonete</title>
+
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="+Caminhonete">
+    <link rel="apple-touch-icon" href="https://res.cloudinary.com/dhm3xue11/image/upload/v1774042985/logo_fskbzw.jpg">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #ff4757; --dark: #2f3542; --bg: #f1f2f6; --gray: #747d8c; --whatsapp: #25D366; }
         body { font-family: -apple-system, system-ui, sans-serif; background-color: var(--bg); margin: 0; padding: 15px; color: var(--dark); }
@@ -20,40 +28,37 @@
         .chip.active { background: var(--primary); color: white; }
 
         .card-peca { background: white; border-radius: 22px; padding: 15px; margin-bottom: 15px; position: relative; cursor: pointer; box-shadow: 0 6px 15px rgba(0,0,0,0.03); }
-        
         .menu-acoes { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; z-index: 5; }
         .btn-icon { background: #f8f9fa; border: none; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; }
-
         .corpo-card { display: flex; gap: 15px; margin-top: 10px; }
         .foto-peca { width: 90px; height: 90px; object-fit: cover; border-radius: 15px; background: #eee; }
-        
         .info-peca { flex: 1; }
         .info-peca h3 { margin: 0 0 5px 0; font-size: 17px; color: var(--dark); }
         .tag-veiculo { font-size: 13px; color: var(--primary); font-weight: 700; display: block; }
-        .tag-ano { font-size: 12px; color: var(--gray); margin-bottom: 8px; display: block; }
         .valor { font-size: 18px; font-weight: 800; color: var(--success); margin-bottom: 10px; }
 
         .controle-estoque { display: flex; align-items: center; background: #f1f2f6; border-radius: 10px; width: fit-content; padding: 4px; }
         .btn-step { background: white; border: none; width: 32px; height: 32px; border-radius: 8px; font-size: 20px; font-weight: bold; cursor: pointer; }
         .qtd-display { padding: 0 15px; font-weight: 800; }
 
+        .btn-carregar-mais {
+            width: 100%;
+            max-width: 280px;
+            display: block;
+            margin: 20px auto 40px;
+            padding: 14px;
+            border: 2px solid var(--primary);
+            background: white;
+            color: var(--primary);
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-carregar-mais:active { background: var(--primary); color: white; transform: scale(0.98); }
+
         .modal-detalhes { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; overflow-y: auto; }
-        .detalhes-header { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; background: white; }
-        .btn-voltar { background: #f1f2f6; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; }
-        .foto-container-detalhe { width: 100%; height: 300px; background: #f9f9f9; display: flex; align-items: center; justify-content: center; }
-        .foto-detalhe { max-width: 100%; max-height: 100%; object-fit: contain; }
-        .detalhe-conteudo { padding: 20px; }
-        .detalhe-item { display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f1f2f6; }
-        .detalhe-label { color: var(--gray); font-size: 14px; font-weight: 600; }
-        .detalhe-valor { font-weight: 700; color: var(--dark); }
-
-        .btn-wpp { background: var(--whatsapp); color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; border-radius: 15px; font-weight: bold; margin-top: 25px; }
-
-        .modal-edit { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
-        .edit-content { background: white; width: 100%; max-width: 400px; padding: 20px; border-radius: 20px; max-height: 90vh; overflow-y: auto; }
-        .edit-content label { display: block; font-size: 12px; font-weight: bold; color: var(--gray); margin-top: 10px; }
-        .edit-content input, .edit-content select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px !important; outline: none; }
-        
         .esgotado { opacity: 0.6; filter: grayscale(0.5); }
     </style>
 </head>
@@ -80,55 +85,35 @@
 </div>
 
 <div id="modalDetalhes" class="modal-detalhes">
-    <div class="detalhes-header">
-        <button class="btn-voltar" onclick="fecharDetalhes()">←</button>
-        <h3 style="margin:0">Detalhes do Item</h3>
+    <div style="padding:15px; display:flex; align-items:center; gap:15px; border-bottom:1px solid #eee;">
+        <button onclick="fecharDetalhes()" style="border:none; background:#f1f2f6; width:40px; height:40px; border-radius:50%; font-size:20px;">←</button>
+        <h3 style="margin:0">Detalhes</h3>
     </div>
-    <div class="foto-container-detalhe">
-        <img id="det-foto" class="foto-detalhe">
-    </div>
-    <div class="detalhe-conteudo">
-        <h2 id="det-nome" style="margin:0 0 10px 0"></h2>
-        <div class="detalhe-item"><span class="detalhe-label">Montadora</span><span class="detalhe-valor" id="det-marca"></span></div>
-        <div class="detalhe-item"><span class="detalhe-label">Veículo</span><span class="detalhe-valor" id="det-veiculo"></span></div>
-        <div class="detalhe-item"><span class="detalhe-label">Ano/Versão</span><span class="detalhe-valor" id="det-ano"></span></div>
-        <div class="detalhe-item"><span class="detalhe-label">Código</span><span class="detalhe-valor" id="det-codigo"></span></div>
-        <div class="detalhe-item"><span class="detalhe-label">Valor</span><span class="detalhe-valor" id="det-valor" style="color:var(--success); font-size:20px"></span></div>
-        <a href="#" id="btn-whatsapp" class="btn-wpp" target="_blank">📱 Enviar Orçamento</a>
-    </div>
-</div>
-
-<div id="modalEdit" class="modal-edit">
-    <div class="edit-content">
-        <h3 style="margin-top:0">Editar Cadastro</h3>
-        <label>Nome da Peça</label><input type="text" id="ed-nome">
-        <label>Código (Part Number)</label><input type="text" id="ed-codigo">
-        <label>Montadora (Fiat, Toyota...)</label><input type="text" id="ed-marca">
-        <label>Veículo (Modelo)</label><input type="text" id="ed-veiculo">
-        <label>Ano</label><input type="text" id="ed-ano">
-        <label>Preço (R$)</label><input type="number" id="ed-valor" step="0.01">
-        
-        <div style="display:flex; gap:10px; margin-top:20px">
-            <button onclick="fecharEdit()" style="flex:1; padding:12px; border:none; border-radius:10px">Cancelar</button>
-            <button onclick="salvarEdit()" style="flex:1; padding:12px; border:none; border-radius:10px; background:var(--primary); color:white">Salvar</button>
-        </div>
+    <div style="text-align:center; padding:20px;">
+        <img id="det-foto" style="max-width:100%; border-radius:15px; max-height:300px;">
+        <h2 id="det-nome" style="margin-top:15px;"></h2>
+        <div id="det-valor" style="font-size:24px; font-weight:800; color:var(--success);"></div>
+        <p id="det-info" style="color:var(--gray);"></p>
+        <a href="#" id="btn-whatsapp" style="display:block; background:var(--whatsapp); color:white; text-decoration:none; padding:18px; border-radius:15px; font-weight:bold; margin-top:20px;">📱 Enviar Orçamento</a>
     </div>
 </div>
 
 <script>
     let estoque = [];
     let filtroCat = 'Todas';
-    const API_URL = "https://mais-caminhonete.onrender.com/api/pecas";
+    let itensExibidos = 12;
+
+    const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
+        ? "/api/pecas" 
+        : "https://mais-caminhonete.onrender.com/api/pecas";
 
     async function carregar() {
         try {
             const res = await fetch(API_URL);
-            if (!res.ok) throw new Error("Erro ao buscar dados");
             estoque = await res.json();
             renderizar();
         } catch (err) {
-            console.error(err);
-            document.getElementById('lista-pecas').innerHTML = '<p style="text-align:center; color:red;">⚠️ Erro ao carregar estoque.</p>';
+            document.getElementById('lista-pecas').innerHTML = 'Erro ao carregar dados.';
         }
     }
 
@@ -140,32 +125,27 @@
         const filtrados = estoque.filter(p => {
             const matchBusca = (p.nome?.toLowerCase().includes(termo)) || 
                                (p.marca?.toLowerCase().includes(termo)) || 
-                               (p.veiculo && p.veiculo.toLowerCase().includes(termo)) ||
+                               (p.veiculo?.toLowerCase().includes(termo)) ||
                                (p.codigo_part_number?.toLowerCase().includes(termo));
             const matchCat = filtroCat === 'Todas' || p.categoria === filtroCat;
             return matchBusca && matchCat;
         });
 
-        if (filtrados.length === 0) {
-            lista.innerHTML = '<p style="text-align:center; color:var(--gray); margin-top:20px;">Nenhuma peça encontrada.</p>';
-            return;
-        }
+        const visiveis = filtrados.slice(0, itensExibidos);
 
-        filtrados.forEach(p => {
+        visiveis.forEach(p => {
             const card = document.createElement('div');
             card.className = `card-peca ${p.estoque <= 0 ? 'esgotado' : ''}`;
-            card.onclick = () => verDetalhes(p.id);
+            const fotoUrl = p.foto_url ? p.foto_url.replace('.heic', '.jpg') : 'https://via.placeholder.com/90';
             
             card.innerHTML = `
                 <div class="menu-acoes" onclick="event.stopPropagation()">
-                    <button class="btn-icon" onclick="abrirEdit(${p.id})">✏️</button>
                     <button class="btn-icon" style="color:var(--danger)" onclick="excluir(${p.id})">🗑️</button>
                 </div>
-                <div class="corpo-card">
-                    <img src="${p.foto_url || 'https://via.placeholder.com/90'}" class="foto-peca">
+                <div class="corpo-card" onclick="verDetalhes(${p.id})">
+                    <img src="${fotoUrl}" class="foto-peca">
                     <div class="info-peca">
                         <span class="tag-veiculo">${p.marca} ${p.veiculo || ''}</span>
-                        <span class="tag-ano">Ano: ${p.ano || 'N/I'}</span>
                         <h3>${p.nome}</h3>
                         <div class="valor">R$ ${p.valor.toFixed(2).replace('.', ',')}</div>
                         <div class="controle-estoque" onclick="event.stopPropagation()">
@@ -174,109 +154,70 @@
                             <button class="btn-step" onclick="mudarestock(${p.id}, 1)">+</button>
                         </div>
                     </div>
-                </div>
-            `;
+                </div>`;
             lista.appendChild(card);
         });
+
+        if (filtrados.length > itensExibidos) {
+            const btnMais = document.createElement('button');
+            btnMais.className = 'btn-carregar-mais';
+            btnMais.innerText = "Ver mais peças";
+            btnMais.onclick = () => {
+                itensExibidos += 12;
+                renderizar();
+            };
+            lista.appendChild(btnMais);
+        }
     }
 
-    function verDetalhes(id) {
-        const p = estoque.find(x => x.id === id);
-        document.getElementById('det-foto').src = p.foto_url || 'https://via.placeholder.com/300';
-        document.getElementById('det-nome').innerText = p.nome;
-        document.getElementById('det-marca').innerText = p.marca;
-        document.getElementById('det-veiculo').innerText = p.veiculo || '---';
-        document.getElementById('det-ano').innerText = p.ano || '---';
-        document.getElementById('det-codigo').innerText = p.codigo_part_number;
-        document.getElementById('det-valor').innerText = `R$ ${p.valor.toFixed(2).replace('.', ',')}`;
-        
-        const textoZap = `Olá! Segue orçamento:\n\n*${p.nome}*\n🚗 Carro: ${p.marca} ${p.veiculo}\n📅 Ano: ${p.ano}\n🔢 Cód: ${p.codigo_part_number}\n💰 *Valor: R$ ${p.valor.toFixed(2).replace('.', ',')}*\n\nFoto: ${p.foto_url}`;
-        document.getElementById('btn-whatsapp').href = `https://wa.me/?text=${encodeURIComponent(textoZap)}`;
-        
-        document.getElementById('modalDetalhes').style.display = 'block';
-    }
-
-    function fecharDetalhes() { document.getElementById('modalDetalhes').style.display = 'none'; }
-
-    let idEdicao = null;
-    function abrirEdit(id) {
-        const p = estoque.find(x => x.id === id);
-        idEdicao = id;
-        document.getElementById('ed-nome').value = p.nome;
-        document.getElementById('ed-codigo').value = p.codigo_part_number;
-        document.getElementById('ed-marca').value = p.marca;
-        document.getElementById('ed-veiculo').value = p.veiculo || '';
-        document.getElementById('ed-ano').value = p.ano || '';
-        document.getElementById('ed-valor').value = p.valor;
-        document.getElementById('modalEdit').style.display = 'flex';
-    }
-
-    function fecharEdit() { document.getElementById('modalEdit').style.display = 'none'; }
-
-    async function salvarEdit() {
-        const dados = {
-            nome: document.getElementById('ed-nome').value,
-            codigo_part_number: document.getElementById('ed-codigo').value,
-            marca: document.getElementById('ed-marca').value,
-            veiculo: document.getElementById('ed-veiculo').value,
-            ano: document.getElementById('ed-ano').value,
-            valor: parseFloat(document.getElementById('ed-valor').value)
-        };
-        try {
-            await fetch(`${API_URL}/${idEdicao}`, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(dados)
-            });
-            fecharEdit();
-            carregar();
-        } catch (err) { alert("Erro ao salvar."); }
-    }
-
-    // FUNÇÃO OTIMISTA: Atualiza a tela instantaneamente
-    async function mudarestock(id, n) {
-        const p = estoque.find(x => x.id === id);
-        const valorAntigo = p.estoque;
-        const novoValor = p.estoque + n;
-        
-        if(novoValor < 0) return;
-
-        // Atualiza a tela na hora para o usuário não sentir lentidão
-        p.estoque = novoValor;
+    document.getElementById('input-busca').addEventListener('input', () => {
+        itensExibidos = 12;
         renderizar();
-
-        try {
-            const res = await fetch(`${API_URL}/${id}`, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ estoque: novoValor })
-            });
-            if(!res.ok) throw new Error();
-        } catch (err) {
-            // Se der erro no servidor, volta o valor e avisa
-            p.estoque = valorAntigo;
-            renderizar();
-            alert("Erro ao sincronizar. Tente novamente.");
-        }
-    }
-
-    async function excluir(id) {
-        if(confirm("Excluir definitivamente esta peça?")) {
-            try {
-                await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
-                carregar();
-            } catch (err) { alert("Erro ao excluir."); }
-        }
-    }
+    });
 
     function setFiltro(cat, el) {
         filtroCat = cat;
+        itensExibidos = 12;
         document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
         el.classList.add('active');
         renderizar();
     }
 
-    document.getElementById('input-busca').addEventListener('input', renderizar);
+    async function mudarestock(id, n) {
+        const p = estoque.find(x => x.id === id);
+        if (p.estoque + n < 0) return;
+        p.estoque += n;
+        renderizar();
+        try {
+            await fetch(`${API_URL}/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ estoque: p.estoque })
+            });
+        } catch (err) { console.error("Erro ao atualizar."); }
+    }
+
+    function verDetalhes(id) {
+        const p = estoque.find(x => x.id === id);
+        const fotoUrl = p.foto_url ? p.foto_url.replace('.heic', '.jpg') : 'https://via.placeholder.com/300';
+        document.getElementById('det-foto').src = fotoUrl;
+        document.getElementById('det-nome').innerText = p.nome;
+        document.getElementById('det-valor').innerText = `R$ ${p.valor.toFixed(2).replace('.', ',')}`;
+        document.getElementById('det-info').innerText = `${p.marca} ${p.veiculo} | Cód: ${p.codigo_part_number}`;
+        const textoZap = `Olá! Tenho interesse na peça: *${p.nome}* (${p.marca}). Valor: R$ ${p.valor.toFixed(2).replace('.', ',')}`;
+        document.getElementById('btn-whatsapp').href = `https://wa.me/?text=${encodeURIComponent(textoZap)}`;
+        document.getElementById('modalDetalhes').style.display = 'block';
+    }
+
+    function fecharDetalhes() { document.getElementById('modalDetalhes').style.display = 'none'; }
+
+    async function excluir(id) {
+        if(confirm("Deseja apagar esta peça?")) {
+            await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+            carregar();
+        }
+    }
+
     window.onload = carregar;
 </script>
 </body>

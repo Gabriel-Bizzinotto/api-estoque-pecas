@@ -3,14 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cadastro + Caminhonete</title>
+    <title>Cadastro - + Caminhonete</title>
+
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="+Caminhonete">
+    <link rel="apple-touch-icon" href="https://res.cloudinary.com/dhm3xue11/image/upload/v1774042985/logo_fskbzw.jpg">
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root { --primary: #007bff; --bg: #f1f2f6; --dark: #2f3542; --gray: #747d8c; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); padding: 15px; margin: 0; color: var(--dark); }
         
         .container { max-width: 500px; margin: 0 auto; background: white; padding: 25px; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        h2 { margin: 0 0 20px 0; font-size: 22px; }
+        h2 { margin: 0 0 20px 0; font-size: 22px; text-align: center; }
 
         label { display: block; margin-top: 15px; font-size: 13px; font-weight: bold; color: var(--gray); }
         input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; outline: none; }
@@ -19,11 +26,10 @@
         .seletor-estoque { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; border-radius: 15px; padding: 5px; margin-top: 8px; border: 1px solid #ddd; }
         .btn-qtde { background: white; color: var(--primary); border: none; width: 50px; height: 50px; border-radius: 12px; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .btn-qtde:active { transform: scale(0.95); background: #e7f1ff; }
-        #input-estoque { border: none; background: transparent; text-align: center; font-size: 20px; font-weight: 800; width: 60px; margin: 0; }
-        #input-estoque::-webkit-inner-spin-button { -webkit-appearance: none; }
+        #input-estoque { border: none; background: transparent; text-align: center; font-size: 20px; font-weight: 800; width: 60px; margin: 0; outline: none; }
 
-        .btn-salvar { width: 100%; background: var(--primary); color: white; border: none; padding: 18px; border-radius: 15px; font-weight: bold; font-size: 16px; margin-top: 25px; cursor: pointer; }
-        .btn-salvar:disabled { background: #ccc; }
+        .btn-salvar { width: 100%; background: var(--primary); color: white; border: none; padding: 18px; border-radius: 15px; font-weight: bold; font-size: 16px; margin-top: 25px; cursor: pointer; transition: background 0.2s; }
+        .btn-salvar:disabled { background: #ccc; cursor: not-allowed; }
 
         .btn-estoque-link { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 20px; padding: 15px; text-decoration: none; color: var(--primary); font-weight: 700; font-size: 15px; border: 2px solid var(--primary); border-radius: 15px; transition: all 0.2s; }
         .btn-estoque-link:active { background: rgba(0, 123, 255, 0.1); transform: scale(0.98); }
@@ -81,8 +87,8 @@
 </div>
 
 <script>
-    // A URL agora aponta para o seu servidor real no Render
-    const API_URL = "https://mais-caminhonete.onrender.com/api/pecas";
+    // URL Relativa: Garante que o celular fale com o seu PC local
+    const API_URL = "/api/pecas";
 
     function alterarQtde(valor) {
         const input = document.getElementById('input-estoque');
@@ -93,30 +99,31 @@
     document.getElementById('form-peca').onsubmit = async (e) => {
         e.preventDefault();
         const btn = document.getElementById('btn-submit');
+        
         btn.innerText = "Cadastrando...";
         btn.disabled = true;
 
         const formData = new FormData(e.target);
 
         try {
-            // Usando a constante API_URL atualizada
             const res = await fetch(API_URL, {
                 method: 'POST',
                 body: formData
             });
 
+            const data = await res.json();
+
             if (res.ok) {
                 alert("✅ Peça salva com sucesso!");
                 window.location.href = "/catalogo";
             } else {
-                const erroData = await res.json();
-                alert("❌ Erro ao cadastrar: " + (erroData.erro || "Verifique os dados."));
+                alert("❌ Erro: " + (data.erro || "Falha ao cadastrar. Verifique os dados."));
                 btn.innerText = "Cadastrar Peça";
                 btn.disabled = false;
             }
         } catch (err) {
             console.error(err);
-            alert("❌ Servidor offline ou erro de conexão!");
+            alert("❌ Erro de conexão com o servidor local.");
             btn.innerText = "Cadastrar Peça";
             btn.disabled = false;
         }
