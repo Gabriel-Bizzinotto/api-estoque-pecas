@@ -23,6 +23,16 @@
         input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; outline: none; }
         input:focus { border-color: var(--primary); }
 
+        /* Estilo para o campo de foto no topo */
+        .foto-upload-container {
+            background: #f8f9fa;
+            border: 2px dashed #ddd;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
         .seletor-estoque { display: flex; align-items: center; justify-content: space-between; background: #f8f9fa; border-radius: 15px; padding: 5px; margin-top: 8px; border: 1px solid #ddd; }
         .btn-qtde { background: white; color: var(--primary); border: none; width: 50px; height: 50px; border-radius: 12px; font-size: 24px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .btn-qtde:active { transform: scale(0.95); background: #e7f1ff; }
@@ -40,6 +50,12 @@
 <div class="container">
     <h2>Nova Peça ➕</h2>
     <form id="form-peca">
+        
+        <div class="foto-upload-container">
+            <label style="margin-top: 0;">📸 Foto da Peça</label>
+            <input type="file" name="foto" id="foto" accept="image/*">
+        </div>
+
         <label>Nome da Peça</label>
         <input type="text" name="nome" placeholder="Ex: Bomba de Alta" required>
 
@@ -75,9 +91,6 @@
             <button type="button" class="btn-qtde" onclick="alterarQtde(1)">+</button>
         </div>
 
-        <label>Foto da Peça</label>
-        <input type="file" name="foto" id="foto" accept="image/*">
-
         <button type="submit" class="btn-salvar" id="btn-submit">Cadastrar Peça</button>
         
         <a href="/catalogo" class="btn-estoque-link">
@@ -87,8 +100,8 @@
 </div>
 
 <script>
-    // URL Relativa: Garante que o celular fale com o seu PC local
-    const API_URL = "/api/pecas";
+    // URL Dinâmica: Funciona localmente (PC/Celular) e na nuvem
+    const API_URL = window.location.origin + "/api/pecas";
 
     function alterarQtde(valor) {
         const input = document.getElementById('input-estoque');

@@ -27,7 +27,6 @@
         .chip { background: white; border: none; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 600; white-space: nowrap; color: var(--gray); cursor: pointer; }
         .chip.active { background: var(--primary); color: white; }
 
-        /* Estilo dos Cards - CORRIGIDO */
         .card-peca { background: white; border-radius: 22px; padding: 15px; margin-bottom: 15px; position: relative; cursor: pointer; box-shadow: 0 6px 15px rgba(0,0,0,0.03); border: 1px solid transparent; }
         .menu-acoes { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; z-index: 5; }
         .btn-icon { background: #f8f9fa; border: none; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; }
@@ -48,7 +47,6 @@
         .btn-carregar-mais { width: 100%; max-width: 280px; display: block; margin: 20px auto 40px; padding: 14px; border: 2px solid var(--primary); background: white; color: var(--primary); border-radius: 15px; font-weight: bold; font-size: 15px; cursor: pointer; transition: all 0.2s; }
         .btn-carregar-mais:active { background: var(--primary); color: white; transform: scale(0.98); }
 
-        /* Modal Detalhes - VISUAL PROFISSIONAL RESTAURADO */
         .modal-detalhes { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; overflow-y: auto; }
         .detalhes-header { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; background: white; }
         .btn-voltar { background: #f1f2f6; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; cursor: pointer; }
@@ -60,7 +58,6 @@
         .detalhe-valor { font-weight: 700; color: var(--dark); }
         .btn-wpp { background: var(--whatsapp); color: white; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 18px; border-radius: 15px; font-weight: bold; margin-top: 25px; }
 
-        /* Modal Edit */
         .modal-edit { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
         .edit-content { background: white; width: 100%; max-width: 400px; padding: 20px; border-radius: 20px; max-height: 90vh; overflow-y: auto; }
         .edit-content label { display: block; font-size: 12px; font-weight: bold; color: var(--gray); margin-top: 10px; }
@@ -131,9 +128,8 @@
     let filtroCat = 'Todas';
     let itensExibidos = 12;
 
-    const API_URL = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1"
-        ? "/api/pecas" 
-        : "https://mais-caminhonete.onrender.com/api/pecas";
+    // A URL agora é dinâmica: usa o endereço atual do navegador (IP do PC ou domínio do Render)
+    const API_URL = window.location.origin + "/api/pecas";
 
     async function carregar() {
         try {
@@ -169,8 +165,6 @@
         visiveis.forEach(p => {
             const card = document.createElement('div');
             card.className = `card-peca ${p.estoque <= 0 ? 'esgotado' : ''}`;
-            
-            // Fix de Foto (HEIC -> JPG)
             const fotoUrl = p.foto_url ? p.foto_url.replace('.heic', '.jpg') : 'https://via.placeholder.com/90';
             
             card.innerHTML = `
@@ -235,7 +229,6 @@
         } catch (err) { alert("Erro ao sincronizar estoque."); }
     }
 
-    // Função de Detalhes - RESTAURADA COM VISUAL PROFISSIONAL
     function verDetalhes(id) {
         const p = estoque.find(x => x.id === id);
         const fotoUrl = p.foto_url ? p.foto_url.replace('.heic', '.jpg') : 'https://via.placeholder.com/300';
@@ -259,6 +252,7 @@
     let idEdicao = null;
     function abrirEdit(id) {
         const p = estoque.find(x => x.id === id);
+        if(!p) return;
         idEdicao = id;
         document.getElementById('ed-nome').value = p.nome;
         document.getElementById('ed-codigo').value = p.codigo_part_number;
@@ -280,15 +274,26 @@
             ano: document.getElementById('ed-ano').value,
             valor: parseFloat(document.getElementById('ed-valor').value)
         };
+
         try {
-            await fetch(`${API_URL}/${idEdicao}`, {
+            const res = await fetch(`${API_URL}/${idEdicao}`, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(dados)
             });
-            fecharEdit();
-            carregar();
-        } catch (err) { alert("Erro ao salvar."); }
+
+            if (res.ok) {
+                fecharEdit();
+                await carregar(); 
+                alert("✅ Edição salva com sucesso!");
+            } else {
+                const errorData = await res.json();
+                alert("❌ Erro: " + (errorData.erro || "Falha ao salvar."));
+            }
+        } catch (err) {
+            console.error(err);
+            alert("❌ Erro de conexão ao salvar.");
+        }
     }
 
     async function excluir(id) {

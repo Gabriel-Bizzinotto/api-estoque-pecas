@@ -5,14 +5,14 @@ from flask import Flask, jsonify, request, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_migrate import Migrate
-from sqlalchemy.exc import IntegrityError  # ESSENCIAL PARA O ERRO AMIGÁVEL
+from sqlalchemy.exc import IntegrityError
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
-# Permite que o celular acesse o PC sem bloqueios
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+# Permite que o celular acesse o PC e o banco sem bloqueios de segurança
+CORS(app)
 
 # --- CONFIGURAÇÃO CLOUDINARY ---
 cloudinary.config( 
@@ -22,13 +22,14 @@ cloudinary.config(
   secure = True
 )
 
-# --- CONEXÃO SUPABASE ---
+# --- CONEXÃO SUPABASE / POSTGRES ---
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres.tqjswejrrozegaaplsyl:glZydFHlkynW4UAd@aws-1-sa-east-1.pooler.supabase.com:5432/postgres"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
+# --- MODELO DO BANCO DE DADOS ---
 class Peca(db.Model):
     __tablename__ = 'pecas'
     id = db.Column(db.Integer, primary_key=True)
@@ -42,6 +43,7 @@ class Peca(db.Model):
     categoria = db.Column(db.String(50), nullable=True, default="Geral")
     foto_url = db.Column(db.String(255), nullable=True)
 
+# --- ROTAS DE PÁGINAS ---
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -50,7 +52,7 @@ def home():
 def abrir_catalogo():
     return render_template('catalogo.html')
 
-# --- API ---
+# --- API (CONTROLE DE DADOS) ---
 
 @app.route('/api/pecas', methods=['GET'])
 def listar_pecas():
@@ -58,10 +60,16 @@ def listar_pecas():
     resultado = []
     for peca in pecas:
         resultado.append({
-            "id": peca.id, "nome": peca.nome, "codigo_part_number": peca.codigo_part_number,
-            "marca": peca.marca, "veiculo": peca.veiculo, "ano": peca.ano,
-            "valor": float(peca.valor), "estoque": peca.estoque, 
-            "categoria": peca.categoria, "foto_url": peca.foto_url
+            "id": peca.id, 
+            "nome": peca.nome, 
+            "codigo_part_number": peca.codigo_part_number,
+            "marca": peca.marca, 
+            "veiculo": peca.veiculo, 
+            "ano": peca.ano,
+            "valor": float(peca.valor), 
+            "estoque": peca.estoque, 
+            "categoria": peca.categoria, 
+            "foto_url": peca.foto_url
         })
     return jsonify(resultado), 200
 
@@ -103,8 +111,7 @@ def cadastrar_peca():
 
     except IntegrityError:
         db.session.rollback()
-        # ESSA RESPOSTA É O QUE O CELULAR PRECISA LER
-        return jsonify({"erro": f"O código '{codigo}' já está cadastrado em outra peça."}), 400
+        return jsonify({"erro": f"O código '{codigo}' já está cadastrado."}), 400
     except Exception as e:
         db.session.rollback()
         return jsonify({"erro": str(e)}), 400
@@ -112,19 +119,38 @@ def cadastrar_peca():
 @app.route('/api/pecas/<int:id>', methods=['PUT', 'DELETE'])
 def gerenciar_peca(id):
     peca = Peca.query.get(id)
-    if not peca: return jsonify({"erro": "Não encontrada"}), 404
+    if not peca: 
+        return jsonify({"erro": "Peça não encontrada"}), 404
+    
+    # EXCLUSÃO
     if request.method == 'DELETE':
         db.session.delete(peca)
         db.session.commit()
-        return jsonify({"mensagem": "Excluído"}), 200
+        return jsonify({"mensagem": "Excluído com sucesso"}), 200
+    
+    # EDIÇÃO (CORRIGIDO PARA ACEITAR TODOS OS CAMPOS)
     try:
         dados = request.get_json()
+        
+        if 'nome' in dados: peca.nome = dados['nome']
+        if 'codigo_part_number' in dados: peca.codigo_part_number = dados['codigo_part_number']
+        if 'marca' in dados: peca.marca = dados['marca']
+        if 'veiculo' in dados: peca.veiculo = dados['veiculo']
+        if 'ano' in dados: peca.ano = dados['ano']
+        if 'valor' in dados: peca.valor = dados['valor']
         if 'estoque' in dados: peca.estoque = int(dados['estoque'])
+        if 'categoria' in dados: peca.categoria = dados['categoria']
+        
         db.session.commit()
-        return jsonify({"mensagem": "OK"}), 200
+        return jsonify({"mensagem": "Atualizado com sucesso!"}), 200
+        
+    except IntegrityError:
+        db.session.rollback()
+        return jsonify({"erro": "Este código já pertence a outra peça."}), 400
     except Exception as e:
         db.session.rollback()
         return jsonify({"erro": str(e)}), 400
 
 if __name__ == '__main__':
+    # Roda no IP da rede para que o celular consiga acessar o PC
     app.run(host='0.0.0.0', port=5000, debug=True)
