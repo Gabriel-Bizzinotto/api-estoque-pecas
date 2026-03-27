@@ -122,13 +122,24 @@ def gerenciar_peca(id):
     if not peca: 
         return jsonify({"erro": "Peça não encontrada"}), 404
     
-    # EXCLUSÃO
+    # --- LÓGICA DE EXCLUSÃO (BANCO + CLOUDINARY) ---
     if request.method == 'DELETE':
-        db.session.delete(peca)
-        db.session.commit()
-        return jsonify({"mensagem": "Excluído com sucesso"}), 200
+        try:
+            if peca.foto_url:
+                # Extrai o public_id: pega o nome do arquivo da URL e adiciona a pasta
+                # Ex URL: .../mais-caminhonete/abc123.jpg -> Public ID: mais-caminhonete/abc123
+                filename = peca.foto_url.split('/')[-1].split('.')
+                public_id = f"mais-caminhonete/{filename}"
+                cloudinary.uploader.destroy(public_id)
+            
+            db.session.delete(peca)
+            db.session.commit()
+            return jsonify({"mensagem": "Peça e Foto removidas com sucesso!"}), 200
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({"erro": f"Erro ao excluir: {str(e)}"}), 400
     
-    # EDIÇÃO (CORRIGIDO PARA ACEITAR TODOS OS CAMPOS)
+    # --- LÓGICA DE EDIÇÃO ---
     try:
         dados = request.get_json()
         
@@ -152,5 +163,4 @@ def gerenciar_peca(id):
         return jsonify({"erro": str(e)}), 400
 
 if __name__ == '__main__':
-    # Roda no IP da rede para que o celular consiga acessar o PC
     app.run(host='0.0.0.0', port=5000, debug=True)

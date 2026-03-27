@@ -103,7 +103,7 @@
         <div class="detalhe-item"><span class="detalhe-label">Ano/Versão</span><span class="detalhe-valor" id="det-ano"></span></div>
         <div class="detalhe-item"><span class="detalhe-label">Código</span><span class="detalhe-valor" id="det-codigo"></span></div>
         <div class="detalhe-item"><span class="detalhe-label">Valor</span><span class="detalhe-valor" id="det-valor" style="color:var(--success); font-size:20px"></span></div>
-        <a href="#" id="btn-whatsapp" class="btn-wpp" target="_blank">📱 Enviar Orçamento</a>
+        <a href="#" id="btn-whatsapp" class="btn-wpp">📱 Enviar Orçamento</a>
     </div>
 </div>
 
@@ -128,7 +128,6 @@
     let filtroCat = 'Todas';
     let itensExibidos = 12;
 
-    // A URL agora é dinâmica: usa o endereço atual do navegador (IP do PC ou domínio do Render)
     const API_URL = window.location.origin + "/api/pecas";
 
     async function carregar() {
@@ -242,7 +241,9 @@
         document.getElementById('det-valor').innerText = `R$ ${p.valor.toFixed(2).replace('.', ',')}`;
         
         const textoZap = `Olá! Segue orçamento:\n\n*${p.nome}*\n🚗 Carro: ${p.marca} ${p.veiculo}\n📅 Ano: ${p.ano}\n🔢 Cód: ${p.codigo_part_number}\n💰 *Valor: R$ ${p.valor.toFixed(2).replace('.', ',')}*\n\nFoto: ${fotoUrl}`;
-        document.getElementById('btn-whatsapp').href = `https://wa.me/?text=${encodeURIComponent(textoZap)}`;
+        
+        // Link direto que força a abertura do aplicativo WhatsApp
+        document.getElementById('btn-whatsapp').href = `whatsapp://send?text=${encodeURIComponent(textoZap)}`;
         
         document.getElementById('modalDetalhes').style.display = 'block';
     }
