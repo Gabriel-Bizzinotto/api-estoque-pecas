@@ -15,7 +15,9 @@
     <style>
         :root { --primary: #007bff; --success: #28a745; --danger: #ff4757; --dark: #2f3542; --bg: #f1f2f6; --gray: #747d8c; --whatsapp: #25D366; }
         body { font-family: -apple-system, system-ui, sans-serif; background-color: var(--bg); margin: 0; padding: 15px; color: var(--dark); }
-        .app-container { max-width: 500px; margin: 0 auto; }
+        
+        /* Container responsivo: 1100px no PC, 100% no celular */
+        .app-container { max-width: 1100px; margin: 0 auto; }
         
         .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .app-logo { height: 50px; width: auto; object-fit: contain; }
@@ -27,7 +29,17 @@
         .chip { background: white; border: none; padding: 10px 20px; border-radius: 20px; font-size: 14px; font-weight: 600; white-space: nowrap; color: var(--gray); cursor: pointer; }
         .chip.active { background: var(--primary); color: white; }
 
-        .card-peca { background: white; border-radius: 22px; padding: 15px; margin-bottom: 15px; position: relative; cursor: pointer; box-shadow: 0 6px 15px rgba(0,0,0,0.03); border: 1px solid transparent; }
+        /* Grid de peças: 1 coluna no celular, 2 ou 3 no PC */
+        #lista-pecas { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 15px; 
+        }
+
+        @media (min-width: 768px) { #lista-pecas { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { #lista-pecas { grid-template-columns: repeat(3, 1fr); } }
+
+        .card-peca { background: white; border-radius: 22px; padding: 15px; position: relative; cursor: pointer; box-shadow: 0 6px 15px rgba(0,0,0,0.03); border: 1px solid transparent; }
         .menu-acoes { position: absolute; top: 12px; right: 12px; display: flex; gap: 8px; z-index: 5; }
         .btn-icon { background: #f8f9fa; border: none; width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; }
         
@@ -45,7 +57,6 @@
         .qtd-display { padding: 0 15px; font-weight: 800; }
 
         .btn-carregar-mais { width: 100%; max-width: 280px; display: block; margin: 20px auto 40px; padding: 14px; border: 2px solid var(--primary); background: white; color: var(--primary); border-radius: 15px; font-weight: bold; font-size: 15px; cursor: pointer; transition: all 0.2s; }
-        .btn-carregar-mais:active { background: var(--primary); color: white; transform: scale(0.98); }
 
         .modal-detalhes { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; overflow-y: auto; }
         .detalhes-header { padding: 15px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 15px; position: sticky; top: 0; background: white; }
@@ -60,7 +71,6 @@
 
         .modal-edit { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
         .edit-content { background: white; width: 100%; max-width: 400px; padding: 20px; border-radius: 20px; max-height: 90vh; overflow-y: auto; }
-        .edit-content label { display: block; font-size: 12px; font-weight: bold; color: var(--gray); margin-top: 10px; }
         .edit-content input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
         
         .esgotado { opacity: 0.6; filter: grayscale(0.5); }
@@ -111,11 +121,11 @@
     <div class="edit-content">
         <h3 style="margin-top:0">Editar Cadastro</h3>
         <label>Nome da Peça</label><input type="text" id="ed-nome">
-        <label>Código (Part Number)</label><input type="text" id="ed-codigo">
+        <label>Código</label><input type="text" id="ed-codigo">
         <label>Montadora</label><input type="text" id="ed-marca">
         <label>Veículo</label><input type="text" id="ed-veiculo">
         <label>Ano</label><input type="text" id="ed-ano">
-        <label>Preço (R$)</label><input type="number" id="ed-valor" step="0.01">
+        <label>Preço</label><input type="number" id="ed-valor" step="0.01">
         <div style="display:flex; gap:10px; margin-top:20px">
             <button onclick="fecharEdit()" style="flex:1; padding:12px; border:none; border-radius:10px; background:#eee;">Cancelar</button>
             <button onclick="salvarEdit()" style="flex:1; padding:12px; border:none; border-radius:10px; background:var(--primary); color:white">Salvar</button>
@@ -156,16 +166,14 @@
 
         const visiveis = filtrados.slice(0, itensExibidos);
 
-        if (visiveis.length === 0) {
-            lista.innerHTML = '<p style="text-align:center; color:var(--gray); margin-top:20px;">Nenhuma peça encontrada.</p>';
-            return;
-        }
-
         visiveis.forEach(p => {
             const card = document.createElement('div');
             card.className = `card-peca ${p.estoque <= 0 ? 'esgotado' : ''}`;
             const fotoUrl = p.foto_url ? p.foto_url.replace('.heic', '.jpg') : 'https://via.placeholder.com/90';
             
+            // Lógica para exibir "Consulte" se o preço for zero
+            const valorDisplay = p.valor > 0 ? `R$ ${p.valor.toFixed(2).replace('.', ',')}` : "Consulte";
+
             card.innerHTML = `
                 <div class="menu-acoes" onclick="event.stopPropagation()">
                     <button class="btn-icon" onclick="abrirEdit(${p.id})">✏️</button>
@@ -177,7 +185,7 @@
                         <span class="tag-veiculo">${p.marca} ${p.veiculo || ''}</span>
                         <span class="tag-ano">Ano: ${p.ano || 'N/I'}</span>
                         <h3>${p.nome}</h3>
-                        <div class="valor">R$ ${p.valor.toFixed(2).replace('.', ',')}</div>
+                        <div class="valor">${valorDisplay}</div>
                         <div class="controle-estoque" onclick="event.stopPropagation()">
                             <button class="btn-step" onclick="mudarestock(${p.id}, -1)">-</button>
                             <span class="qtd-display">${p.estoque}</span>
@@ -193,10 +201,7 @@
             const btnMais = document.createElement('button');
             btnMais.className = 'btn-carregar-mais';
             btnMais.innerText = "Ver mais peças";
-            btnMais.onclick = () => {
-                itensExibidos += 12;
-                renderizar();
-            };
+            btnMais.onclick = () => { itensExibidos += 12; renderizar(); };
             lista.appendChild(btnMais);
         }
     }
@@ -238,13 +243,15 @@
         document.getElementById('det-veiculo').innerText = p.veiculo || '---';
         document.getElementById('det-ano').innerText = p.ano || '---';
         document.getElementById('det-codigo').innerText = p.codigo_part_number;
-        document.getElementById('det-valor').innerText = `R$ ${p.valor.toFixed(2).replace('.', ',')}`;
         
-        const textoZap = `Olá! Segue orçamento:\n\n*${p.nome}*\n🚗 Carro: ${p.marca} ${p.veiculo}\n📅 Ano: ${p.ano}\n🔢 Cód: ${p.codigo_part_number}\n💰 *Valor: R$ ${p.valor.toFixed(2).replace('.', ',')}*\n\nFoto: ${fotoUrl}`;
+        // Exibe preço ou "Consulte" nos detalhes
+        const valorDisplay = p.valor > 0 ? `R$ ${p.valor.toFixed(2).replace('.', ',')}` : "Consulte";
+        document.getElementById('det-valor').innerText = valorDisplay;
         
-        // Link direto que força a abertura do aplicativo WhatsApp
+        // MENSAGEM DO WHATSAPP (SEM CÓDIGO E SEM VALOR)
+        const textoZap = `Olá! Segue orçamento:\n\n*${p.nome}*\n🚗 Carro: ${p.marca} ${p.veiculo}\n📅 Ano: ${p.ano}\n\nFoto: ${fotoUrl}`;
+        
         document.getElementById('btn-whatsapp').href = `whatsapp://send?text=${encodeURIComponent(textoZap)}`;
-        
         document.getElementById('modalDetalhes').style.display = 'block';
     }
 
@@ -273,7 +280,7 @@
             marca: document.getElementById('ed-marca').value,
             veiculo: document.getElementById('ed-veiculo').value,
             ano: document.getElementById('ed-ano').value,
-            valor: parseFloat(document.getElementById('ed-valor').value)
+            valor: parseFloat(document.getElementById('ed-valor').value) || 0
         };
 
         try {
@@ -288,13 +295,9 @@
                 await carregar(); 
                 alert("✅ Edição salva com sucesso!");
             } else {
-                const errorData = await res.json();
-                alert("❌ Erro: " + (errorData.erro || "Falha ao salvar."));
+                alert("❌ Erro ao salvar.");
             }
-        } catch (err) {
-            console.error(err);
-            alert("❌ Erro de conexão ao salvar.");
-        }
+        } catch (err) { alert("❌ Erro de conexão."); }
     }
 
     async function excluir(id) {

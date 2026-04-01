@@ -23,7 +23,6 @@
         input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 12px; box-sizing: border-box; font-size: 16px; outline: none; }
         input:focus { border-color: var(--primary); }
 
-        /* Estilo para o campo de foto no topo */
         .foto-upload-container {
             background: #f8f9fa;
             border: 2px dashed #ddd;
@@ -60,7 +59,7 @@
         <input type="text" name="nome" placeholder="Ex: Bomba de Alta" required>
 
         <label>Código / Part Number</label>
-        <input type="text" name="codigo_part_number" placeholder="Ex: BAP-9921" required>
+        <input type="text" name="codigo_part_number" placeholder="Carregando sugestão..." required>
 
         <label>Categoria</label>
         <select name="categoria">
@@ -82,7 +81,7 @@
         <input type="text" name="ano" placeholder="Ex: 2020/2021">
 
         <label>Preço de Venda (R$)</label>
-        <input type="number" name="valor" step="0.01" placeholder="0.00" required>
+        <input type="number" name="valor" step="0.01" placeholder="0.00">
 
         <label>Quantidade em Estoque</label>
         <div class="seletor-estoque">
@@ -100,8 +99,23 @@
 </div>
 
 <script>
-    // URL Dinâmica: Funciona localmente (PC/Celular) e na nuvem
     const API_URL = window.location.origin + "/api/pecas";
+
+    async function carregarSugestaoCodigo() {
+        try {
+            const res = await fetch(window.location.origin + "/api/proximo_codigo");
+            const data = await res.json();
+            const inputCodigo = document.querySelector('input[name="codigo_part_number"]');
+            
+            if (inputCodigo && data.sugestao) {
+                inputCodigo.value = data.sugestao;
+                inputCodigo.style.border = "2px solid var(--primary)";
+                inputCodigo.style.backgroundColor = "#f0f7ff";
+            }
+        } catch (err) {
+            console.error("Erro ao buscar sugestão de código:", err);
+        }
+    }
 
     function alterarQtde(valor) {
         const input = document.getElementById('input-estoque');
@@ -130,17 +144,19 @@
                 alert("✅ Peça salva com sucesso!");
                 window.location.href = "/catalogo";
             } else {
-                alert("❌ Erro: " + (data.erro || "Falha ao cadastrar. Verifique os dados."));
+                alert("❌ Erro: " + (data.erro || "Falha ao cadastrar."));
                 btn.innerText = "Cadastrar Peça";
                 btn.disabled = false;
             }
         } catch (err) {
             console.error(err);
-            alert("❌ Erro de conexão com o servidor local.");
+            alert("❌ Erro de conexão.");
             btn.innerText = "Cadastrar Peça";
             btn.disabled = false;
         }
     };
+
+    window.addEventListener('DOMContentLoaded', carregarSugestaoCodigo);
 </script>
 
 </body>

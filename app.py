@@ -11,19 +11,18 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-# Permite que o celular acesse o PC e o banco sem bloqueios de segurança
 CORS(app)
 
 # --- CONFIGURAÇÃO CLOUDINARY ---
 cloudinary.config( 
-  cloud_name = "dhm3xue11", 
-  api_key = "689934283739685", 
-  api_secret = "3AuHv8AXwDk1iXH-5gT-JEbIu1c", 
-  secure = True
+    cloud_name = "dhm3xue11", 
+    api_key = "689934283739685", 
+    api_secret = "3AuHv8AXwDk1iXH-5gT-JEbIu1c", 
+    secure = True
 )
 
 # --- CONEXÃO SUPABASE / POSTGRES ---
-app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres.tqjswejrrozegaaplsyl:glZydFHlkynW4UAd@aws-1-sa-east-1.pooler.supabase.com:5432/postgres"
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', "postgresql://postgres.tqjswejrrozegaaplsyl:glZydFHlkynW4UAd@aws-1-sa-east-1.pooler.supabase.com:5432/postgres")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -38,7 +37,8 @@ class Peca(db.Model):
     marca = db.Column(db.String(100), nullable=True) 
     veiculo = db.Column(db.String(100), nullable=True)
     ano = db.Column(db.String(50), nullable=True)
-    valor = db.Column(db.Numeric(10, 2), nullable=False)
+    # Alterado para nullable=True para o SQLAlchemy não exigir valor no banco
+    valor = db.Column(db.Numeric(10, 2), nullable=True) 
     estoque = db.Column(db.Integer, default=0)
     categoria = db.Column(db.String(50), nullable=True, default="Geral")
     foto_url = db.Column(db.String(255), nullable=True)
@@ -66,19 +66,42 @@ def listar_pecas():
             "marca": peca.marca, 
             "veiculo": peca.veiculo, 
             "ano": peca.ano,
-            "valor": float(peca.valor), 
+            "valor": float(peca.valor) if peca.valor else 0.00, 
             "estoque": peca.estoque, 
             "categoria": peca.categoria, 
             "foto_url": peca.foto_url
         })
     return jsonify(resultado), 200
 
+@app.route('/api/proximo_codigo', methods=['GET'])
+def proximo_codigo():
+    try:
+        pecas = Peca.query.with_entities(Peca.codigo_part_number).all()
+        if not pecas:
+            return jsonify({"sugestao": "1"}), 200
+        
+        codigos_numericos = []
+        for p in pecas:
+            if p.codigo_part_number and str(p.codigo_part_number).isdigit():
+                codigos_numericos.append(int(p.codigo_part_number))
+        
+        if not codigos_numericos:
+            return jsonify({"sugestao": str(len(pecas) + 1)}), 200
+            
+        proximo = max(codigos_numericos) + 1
+        return jsonify({"sugestao": str(proximo)}), 200
+    except Exception as e:
+        return jsonify({"erro": str(e)}), 400
+
 @app.route('/api/pecas', methods=['POST'])
 def cadastrar_peca():
     nome = request.form.get('nome')
     codigo = request.form.get('codigo_part_number')
     try:
-        valor = request.form.get('valor')
+        # Lógica para valor opcional
+        valor_raw = request.form.get('valor')
+        valor = float(valor_raw) if valor_raw and valor_raw.strip() else 0.00
+        
         estoque = int(request.form.get('estoque', 0))
         
         foto_url = None
@@ -122,12 +145,9 @@ def gerenciar_peca(id):
     if not peca: 
         return jsonify({"erro": "Peça não encontrada"}), 404
     
-    # --- LÓGICA DE EXCLUSÃO (BANCO + CLOUDINARY) ---
     if request.method == 'DELETE':
         try:
             if peca.foto_url:
-                # Extrai o public_id: pega o nome do arquivo da URL e adiciona a pasta
-                # Ex URL: .../mais-caminhonete/abc123.jpg -> Public ID: mais-caminhonete/abc123
                 filename = peca.foto_url.split('/')[-1].split('.')
                 public_id = f"mais-caminhonete/{filename}"
                 cloudinary.uploader.destroy(public_id)
@@ -139,7 +159,7 @@ def gerenciar_peca(id):
             db.session.rollback()
             return jsonify({"erro": f"Erro ao excluir: {str(e)}"}), 400
     
-    # --- LÓGICA DE EDIÇÃO ---
+    # LÓGICA DE EDIÇÃO (PUT)
     try:
         dados = request.get_json()
         
@@ -148,7 +168,11 @@ def gerenciar_peca(id):
         if 'marca' in dados: peca.marca = dados['marca']
         if 'veiculo' in dados: peca.veiculo = dados['veiculo']
         if 'ano' in dados: peca.ano = dados['ano']
-        if 'valor' in dados: peca.valor = dados['valor']
+        
+        # Lógica para valor opcional na edição
+        if 'valor' in dados:
+            peca.valor = float(dados['valor']) if dados['valor'] else 0.00
+            
         if 'estoque' in dados: peca.estoque = int(dados['estoque'])
         if 'categoria' in dados: peca.categoria = dados['categoria']
         
